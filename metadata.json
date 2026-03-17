@@ -1,0 +1,7 @@
+{
+  "name": "CampusCart: School Marketplace",
+  "description": "A unified platform for school food pre-ordering and student-run business listings.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

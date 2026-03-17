@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "vendor", "admin"] },
+        "schoolId": { "type": "string" },
+        "grade": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Vendor": {
+      "title": "Vendor",
+      "description": "Food vendor business details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "logo": { "type": "string" },
+        "location": { "type": "string" },
+        "operatingHours": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "suspended"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "name", "status"]
+    },
+    "MenuItem": {
+      "title": "MenuItem",
+      "description": "Food item offered by a vendor",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "photo": { "type": "string" },
+        "isAvailable": { "type": "boolean" },
+        "category": { "type": "string" }
+      },
+      "required": ["vendorId", "name", "price"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Food pre-order details",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "items": { "type": "array" },
+        "totalPrice": { "type": "number" },
+        "pickupTime": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "ready", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "vendorId", "items", "totalPrice", "status"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "Student marketplace product listing",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "condition": { "type": "string", "enum": ["new", "used"] },
+        "photos": { "type": "array" },
+        "status": { "type": "string", "enum": ["available", "sold"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "title", "price", "status"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message between users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "text"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Rating and review for a vendor or seller",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "targetId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "rating": { "type": "integer" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["targetId", "authorId", "rating"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/vendors/{vendorId}": { "schema": "Vendor", "description": "Vendor profiles" },
+    "/vendors/{vendorId}/menuItems/{itemId}": { "schema": "MenuItem", "description": "Vendor menu items" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Food orders" },
+    "/listings/{listingId}": { "schema": "Listing", "description": "Marketplace listings" },
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat messages" },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "User reviews" }
+  }
+}

@@ -1,0 +1,121 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields: uid, email, displayName, photoURL, role, schoolId, grade, createdAt
+    //
+    // Collection: vendors
+    // Fields: id, ownerId, name, description, logo, location, operatingHours, status, createdAt
+    //
+    // Collection: vendors/{vendorId}/menuItems
+    // Fields: id, vendorId, name, description, price, photo, isAvailable, category
+    //
+    // Collection: orders
+    // Fields: id, buyerId, vendorId, items, totalPrice, pickupTime, status, createdAt
+    //
+    // Collection: listings
+    // Fields: id, sellerId, title, description, price, category, condition, photos, status, createdAt
+    //
+    // Collection: chats/{chatId}/messages
+    // Fields: id, chatId, senderId, text, createdAt
+    //
+    // Collection: reviews
+    // Fields: id, targetId, authorId, rating, comment, createdAt
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "pakodaniel43@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isVendor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'vendor';
+    }
+
+    // Validation Functions
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'role']) &&
+             data.uid is string && data.email is string &&
+             data.role in ['student', 'vendor', 'admin'];
+    }
+
+    function isValidVendor(data) {
+      return data.keys().hasAll(['ownerId', 'name', 'status']) &&
+             data.ownerId is string && data.name is string &&
+             data.status in ['pending', 'approved', 'suspended'];
+    }
+
+    function isValidMenuItem(data) {
+      return data.keys().hasAll(['vendorId', 'name', 'price']) &&
+             data.vendorId is string && data.name is string && data.price is number;
+    }
+
+    function isValidOrder(data) {
+      return data.keys().hasAll(['buyerId', 'vendorId', 'items', 'totalPrice', 'status']) &&
+             data.buyerId is string && data.vendorId is string && data.status in ['pending', 'confirmed', 'ready', 'completed', 'cancelled'];
+    }
+
+    function isValidListing(data) {
+      return data.keys().hasAll(['sellerId', 'title', 'price', 'status']) &&
+             data.sellerId is string && data.title is string && data.price is number &&
+             data.status in ['available', 'sold'];
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
+    }
+
+    match /vendors/{vendorId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidVendor(request.resource.data);
+      allow update: if (isOwner(resource.data.ownerId) || isAdmin()) && isValidVendor(request.resource.data);
+    }
+
+    match /vendors/{vendorId}/menuItems/{itemId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && (isOwner(get(/databases/$(database)/documents/vendors/$(vendorId)).data.ownerId) || isAdmin()) && isValidMenuItem(request.resource.data);
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.buyerId) || isOwner(get(/databases/$(database)/documents/vendors/$(resource.data.vendorId)).data.ownerId) || isAdmin());
+      allow create: if isAuthenticated() && isValidOrder(request.resource.data);
+      allow update: if isAuthenticated() && (isOwner(resource.data.buyerId) || isOwner(get(/databases/$(database)/documents/vendors/$(resource.data.vendorId)).data.ownerId) || isAdmin()) && isValidOrder(request.resource.data);
+    }
+
+    match /listings/{listingId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && isValidListing(request.resource.data);
+      allow update: if (isOwner(resource.data.sellerId) || isAdmin()) && isValidListing(request.resource.data);
+      allow delete: if (isOwner(resource.data.sellerId) || isAdmin());
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow read: if isAuthenticated(); // Simplified for now, should check chat participants
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if (isOwner(resource.data.authorId) || isAdmin());
+    }
+  }
+}
