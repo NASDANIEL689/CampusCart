@@ -26,6 +26,8 @@
         "location": { "type": "string" },
         "operatingHours": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "rating": { "type": "number", "description": "Average rating of the vendor." },
+        "ratingCount": { "type": "integer", "description": "Total number of ratings received." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["ownerId", "name", "status"]
@@ -62,6 +64,7 @@
         "totalPrice": { "type": "number" },
         "pickupTime": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "confirmed", "ready", "completed", "cancelled"] },
+        "rated": { "type": "boolean", "description": "Whether the order has been rated by the buyer." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["buyerId", "type", "totalPrice", "status"]

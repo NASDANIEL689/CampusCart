@@ -1,83 +1,78 @@
+import { collection, addDoc, Timestamp, getDocs, query, where } from 'firebase/firestore';
 import { db } from './firebase';
-import { collection, addDoc, Timestamp } from 'firebase/firestore';
 
-async function seedData() {
+export const seedData = async () => {
   try {
-    // Seed Vendors
-    const vendor1 = await addDoc(collection(db, 'vendors'), {
-      name: "The Lunch Box",
-      description: "Freshly made sandwiches, salads and wraps. Healthy options for students.",
-      logo: "https://images.unsplash.com/photo-1547584370-2cc98b8b8dc8?auto=format&fit=crop&q=80&w=1000",
-      location: "East Wing Cafeteria",
-      operatingHours: "7:00 AM - 3:00 PM",
+    // Check if we already have vendors
+    const vendorsSnap = await getDocs(collection(db, 'vendors'));
+    if (!vendorsSnap.empty) return;
+
+    // Add a sample vendor
+    const vendorRef = await addDoc(collection(db, 'vendors'), {
+      name: "Campus Bites",
+      description: "Fresh sandwiches and salads made daily for students.",
+      logo: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1000",
+      location: "Student Union, Ground Floor",
+      operatingHours: "8:00 AM - 4:00 PM",
+      phone: "+267 71234567",
+      email: "bites@campus.edu",
       status: "approved",
+      ownerId: "system",
       createdAt: Timestamp.now()
     });
 
-    await addDoc(collection(db, `vendors/${vendor1.id}/menuItems`), {
-      vendorId: vendor1.id,
-      name: "Classic Club Sandwich",
-      description: "Turkey, bacon, lettuce, tomato and mayo on toasted sourdough.",
-      price: 8.50,
-      photo: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&q=80&w=1000",
-      isAvailable: true,
-      category: "Sandwiches"
-    });
-
-    const vendor2 = await addDoc(collection(db, 'vendors'), {
-      name: "Burger Haven",
-      description: "Juicy burgers, crispy fries and thick milkshakes. The ultimate comfort food.",
-      logo: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&q=80&w=1000",
-      location: "Main Courtyard",
-      operatingHours: "10:00 AM - 5:00 PM",
-      status: "approved",
+    // Add menu items for the vendor
+    await addDoc(collection(db, `vendors/${vendorRef.id}/menuItems`), {
+      name: "Chicken Mayo Sandwich",
+      price: 35,
+      description: "Grilled chicken with creamy mayo on wholewheat bread.",
+      photo: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&q=80&w=500",
+      vendorId: vendorRef.id,
       createdAt: Timestamp.now()
     });
 
-    await addDoc(collection(db, `vendors/${vendor2.id}/menuItems`), {
-      vendorId: vendor2.id,
-      name: "Double Cheeseburger",
-      description: "Two beef patties, cheddar cheese, pickles and secret sauce.",
-      price: 10.99,
-      photo: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=1000",
-      isAvailable: true,
-      category: "Burgers"
-    });
-
-    // Seed Listings
-    await addDoc(collection(db, 'listings'), {
-      sellerId: "sample_seller_1",
-      title: "Calculus Early Transcendentals",
-      description: "Used for one semester. Good condition, no highlighting.",
+    await addDoc(collection(db, `vendors/${vendorRef.id}/menuItems`), {
+      name: "Greek Salad",
       price: 45,
+      description: "Fresh cucumbers, tomatoes, olives, and feta cheese.",
+      photo: "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=500",
+      vendorId: vendorRef.id,
+      createdAt: Timestamp.now()
+    });
+
+    // Add sample listings
+    await addDoc(collection(db, 'listings'), {
+      title: "Calculus Textbook (10th Edition)",
+      description: "Slightly used, no highlights. Perfect for MAT101.",
+      price: 250,
       category: "Books",
       condition: "used",
-      photos: ["https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=1000"],
-      status: "available",
+      photos: ["https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=500"],
       location: "Main Library",
-      coordinates: { lat: -24.6583, lng: 25.9122 },
+      coordinates: { lat: -24.658, lng: 25.912 },
+      sellerId: "system",
+      sellerName: "System Admin",
+      status: "available",
       createdAt: Timestamp.now()
     });
 
     await addDoc(collection(db, 'listings'), {
-      sellerId: "sample_seller_2",
-      title: "Mechanical Keyboard - RGB",
-      description: "Blue switches, very clicky. Perfect for coding or gaming.",
-      price: 60,
+      title: "Noise Cancelling Headphones",
+      description: "Sony WH-1000XM4. Great for studying in noisy dorms.",
+      price: 1800,
       category: "Electronics",
-      condition: "new",
-      photos: ["https://images.unsplash.com/photo-1511467687858-23d96c32e4ae?auto=format&fit=crop&q=80&w=1000"],
+      condition: "used",
+      photos: ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&q=80&w=500"],
+      location: "Dorm Block A",
+      coordinates: { lat: -24.660, lng: 25.915 },
+      sellerId: "system",
+      sellerName: "System Admin",
       status: "available",
-      location: "Engineering Block",
-      coordinates: { lat: -24.6595, lng: 25.9135 },
       createdAt: Timestamp.now()
     });
 
-    console.log("Seeding complete!");
+    console.log("Seed data added successfully!");
   } catch (error) {
     console.error("Error seeding data:", error);
   }
-}
-
-// This is a helper to be called from console or a button if needed
-export { seedData };
+};

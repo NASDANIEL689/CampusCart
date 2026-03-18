@@ -58,7 +58,9 @@ service cloud.firestore {
     function isValidVendor(data) {
       return data.keys().hasAll(['ownerId', 'name', 'status']) &&
              data.ownerId is string && data.name is string &&
-             data.status in ['pending', 'approved', 'suspended'];
+             data.status in ['pending', 'approved', 'suspended'] &&
+             (!('rating' in data) || data.rating is number) &&
+             (!('ratingCount' in data) || data.ratingCount is number);
     }
 
     function isValidMenuItem(data) {
@@ -69,7 +71,8 @@ service cloud.firestore {
     function isValidOrder(data) {
       return data.keys().hasAll(['buyerId', 'type', 'items', 'totalPrice', 'status']) &&
              data.buyerId is string && data.type in ['food', 'marketplace'] &&
-             data.status in ['pending', 'confirmed', 'ready', 'completed', 'cancelled'];
+             data.status in ['pending', 'confirmed', 'ready', 'completed', 'cancelled'] &&
+             (!('rated' in data) || data.rated is bool);
     }
 
     function isValidListing(data) {
@@ -90,7 +93,8 @@ service cloud.firestore {
     match /vendors/{vendorId} {
       allow read: if true;
       allow create: if isAuthenticated() && isValidVendor(request.resource.data);
-      allow update: if (isOwner(resource.data.ownerId) || isAdmin()) && isValidVendor(request.resource.data);
+      allow update: if (isOwner(resource.data.ownerId) || isAdmin()) && isValidVendor(request.resource.data) ||
+                     (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingCount']));
     }
 
     match /vendors/{vendorId}/menuItems/{itemId} {
@@ -111,28 +115,12 @@ service cloud.firestore {
       allow delete: if (isOwner(resource.data.sellerId) || isAdmin());
     }
 
-    match /chats/{chatId}/messages/{messageId} {
-      allow read: if isAuthenticated(); // Simplified for now, should check chat participants
-      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
-    }
-
     match /reviews/{reviewId} {
       allow read: if true;
       allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
       allow update, delete: if (isOwner(resource.data.authorId) || isAdmin());
     }
-    // Vendors
-    match /vendors/{vendorId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && 
-        request.resource.data.ownerId == request.auth.uid &&
-        request.resource.data.status == 'pending';
-      allow update: if isAuthenticated() && (
-        resource.data.ownerId == request.auth.uid || isAdmin()
-      );
-    }
 
-    // Chats
     match /chats/{chatId} {
       allow read: if isAuthenticated() && request.auth.uid in resource.data.participants;
       allow create: if isAuthenticated() && request.auth.uid in request.resource.data.participants;
