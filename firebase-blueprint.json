@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Information about a student or vendor user.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["student", "vendor", "admin"] },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "email", "role"]
+    },
+    "Vendor": {
+      "title": "Vendor",
+      "description": "A food vendor on campus.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "logo": { "type": "string" },
+        "location": { "type": "string" },
+        "operatingHours": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "name", "status"]
+    },
+    "Listing": {
+      "title": "Marketplace Listing",
+      "description": "An item for sale in the marketplace.",
+      "type": "object",
+      "properties": {
+        "sellerId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "condition": { "type": "string", "enum": ["new", "used"] },
+        "photos": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["available", "sold"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sellerId", "title", "price", "status"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "A food order or marketplace purchase.",
+      "type": "object",
+      "properties": {
+        "buyerId": { "type": "string" },
+        "buyerName": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "listingId": { "type": "string" },
+        "type": { "type": "string", "enum": ["food", "marketplace"] },
+        "items": { "type": "array", "items": { "type": "object" } },
+        "totalPrice": { "type": "number" },
+        "pickupTime": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "ready", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["buyerId", "type", "totalPrice", "status"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation between a buyer and a seller.",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": { "type": "string" },
+        "lastMessageAt": { "type": "string", "format": "date-time" },
+        "listingId": { "type": "string" },
+        "listingTitle": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["participants", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a chat.",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chatId", "senderId", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User profiles" },
+    "/vendors/{vendorId}": { "schema": "Vendor", "description": "Food vendors" },
+    "/listings/{listingId}": { "schema": "Listing", "description": "Marketplace listings" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Orders and sales" },
+    "/chats/{chatId}": { "schema": "Chat", "description": "Chat sessions" },
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat messages" }
+  }
+}
