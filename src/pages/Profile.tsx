@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   CreditCard,
   Settings,
-  ArrowRight
+  ArrowRight,
+  MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, onSnapshot, deleteDoc, doc, updateDoc, Timestamp, addDoc, runTransaction } from 'firebase/firestore';
@@ -28,6 +29,7 @@ import { cn } from '../utils/cn';
 import { OrderStatusTracker } from '../components/OrderStatusTracker';
 import { Modal } from '../components/Modal';
 import { VendorDashboard } from '../components/VendorDashboard';
+import { createNotification } from '../utils/notifications';
 
 export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) => {
   const { user, profile, logout } = useAuth();
@@ -40,6 +42,19 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
   const [ratingOrder, setRatingOrder] = useState<Order | null>(null);
   const [ratingValue, setRatingValue] = useState(5);
   const [isRatingLoading, setIsRatingLoading] = useState(false);
+  const [isPreferencesOpen, setIsPreferencesOpen] = useState(false);
+  const [preferences, setPreferences] = useState(profile?.preferences || {
+    notifications: { messages: true, orders: true, promotions: false },
+    theme: 'system'
+  });
+
+  const { switchAccount } = useAuth();
+
+  useEffect(() => {
+    if (profile?.preferences) {
+      setPreferences(profile.preferences);
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -111,6 +126,17 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
   const updateOrderStatus = async (id: string, status: string) => {
     try {
       await updateDoc(doc(db, 'orders', id), { status });
+      
+      const order = [...myOrders, ...mySales].find(o => o.id === id);
+      if (order && order.buyerId) {
+        await createNotification(
+          order.buyerId,
+          `Order Update: ${status.toUpperCase()}`,
+          `Your order #${id.slice(-4)} is now ${status}.`,
+          'order',
+          '#'
+        );
+      }
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'orders');
     }
@@ -170,6 +196,19 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
       handleFirestoreError(error, OperationType.UPDATE, ratingOrder.type === 'food' ? 'vendors' : 'users');
     } finally {
       setIsRatingLoading(false);
+    }
+  };
+
+  const savePreferences = async () => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        preferences
+      });
+      setIsPreferencesOpen(false);
+      alert("Preferences saved!");
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, 'users');
     }
   };
 
@@ -254,14 +293,26 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
           </div>
 
           <div className="flex flex-col sm:flex-row lg:flex-col gap-4 w-full lg:w-auto">
+            <div className="flex gap-2">
+              <button 
+                onClick={logout} 
+                className="flex-1 group flex items-center justify-center gap-3 bg-white text-red-500 font-black px-6 py-4 rounded-[2rem] border-2 border-red-50 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm"
+              >
+                <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" /> 
+                <span className="text-sm">Sign Out</span>
+              </button>
+              <button 
+                onClick={switchAccount} 
+                className="flex-1 group flex items-center justify-center gap-3 bg-white text-brand-600 font-black px-6 py-4 rounded-[2rem] border-2 border-brand-50 hover:bg-brand-600 hover:text-white hover:border-brand-600 transition-all duration-300 shadow-sm"
+              >
+                <UserIcon size={18} /> 
+                <span className="text-sm">Switch</span>
+              </button>
+            </div>
             <button 
-              onClick={logout} 
-              className="group flex items-center justify-center gap-3 bg-white text-red-500 font-black px-8 py-5 rounded-[2rem] border-2 border-red-50 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all duration-300 shadow-sm"
+              onClick={() => setIsPreferencesOpen(true)}
+              className="group flex items-center justify-center gap-3 bg-slate-900 text-white font-black px-8 py-5 rounded-[2rem] hover:bg-slate-800 transition-all duration-300 shadow-xl shadow-slate-900/20"
             >
-              <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" /> 
-              <span>Sign Out</span>
-            </button>
-            <button className="group flex items-center justify-center gap-3 bg-slate-900 text-white font-black px-8 py-5 rounded-[2rem] hover:bg-slate-800 transition-all duration-300 shadow-xl shadow-slate-900/20">
               <Settings size={20} className="group-hover:rotate-90 transition-transform duration-500" /> 
               <span>Preferences</span>
             </button>
@@ -423,13 +474,32 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
                           <p className="text-lg text-slate-500 font-medium">
                             {order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
                           </p>
-                          <div className="flex items-center gap-4 text-sm text-slate-400 font-bold">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400 font-bold">
                             <div className="flex items-center gap-2">
                               <Clock size={16} />
                               <span>{(order.createdAt as any)?.toDate().toLocaleDateString()}</span>
                             </div>
                             <div className="w-1 h-1 bg-slate-300 rounded-full" />
                             <span>{(order.createdAt as any)?.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {order.vendorLocation && (
+                              <>
+                                <div className="w-1 h-1 bg-slate-300 rounded-full" />
+                                <div className="flex items-center gap-2 text-brand-600">
+                                  <MapPin size={16} />
+                                  <span>Pickup: {order.vendorLocation}</span>
+                                  {order.vendorCoordinates && (
+                                    <a 
+                                      href={`https://www.google.com/maps/search/?api=1&query=${order.vendorCoordinates.lat},${order.vendorCoordinates.lng}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="ml-2 text-[10px] font-black uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded-full hover:bg-brand-100 transition-colors"
+                                    >
+                                      View Map
+                                    </a>
+                                  )}
+                                </div>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -671,6 +741,82 @@ export const Profile = ({ onChatClick }: { onChatClick: (chat: Chat) => void }) 
               className="flex-1 bg-slate-900 text-white py-5 rounded-[1.8rem] font-black text-sm uppercase tracking-widest shadow-2xl shadow-slate-900/20 hover:bg-slate-800 disabled:opacity-50 transition-all"
             >
               {isRatingLoading ? 'Submitting...' : 'Submit Review'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Preferences Modal */}
+      <Modal isOpen={isPreferencesOpen} onClose={() => setIsPreferencesOpen(false)} title="User Preferences">
+        <div className="space-y-8 py-4">
+          <div className="space-y-6">
+            <h4 className="text-lg font-bold text-slate-900">Notification Settings</h4>
+            <div className="space-y-4">
+              {[
+                { id: 'messages', label: 'New Messages', description: 'Get notified when you receive a new message' },
+                { id: 'orders', label: 'Order Updates', description: 'Get notified about changes in your order status' },
+                { id: 'promotions', label: 'Promotions', description: 'Receive news about campus deals and events' },
+              ].map((item) => (
+                <div key={item.id} className="flex items-center justify-between p-4 rounded-2xl bg-slate-50">
+                  <div className="space-y-1">
+                    <p className="font-bold text-slate-900">{item.label}</p>
+                    <p className="text-xs text-slate-500">{item.description}</p>
+                  </div>
+                  <button
+                    onClick={() => setPreferences({
+                      ...preferences,
+                      notifications: {
+                        ...preferences.notifications,
+                        [item.id]: !preferences.notifications[item.id as keyof typeof preferences.notifications]
+                      }
+                    })}
+                    className={cn(
+                      "w-12 h-6 rounded-full transition-colors relative",
+                      preferences.notifications[item.id as keyof typeof preferences.notifications] ? "bg-brand-600" : "bg-slate-300"
+                    )}
+                  >
+                    <div className={cn(
+                      "absolute top-1 w-4 h-4 bg-white rounded-full transition-all",
+                      preferences.notifications[item.id as keyof typeof preferences.notifications] ? "right-1" : "left-1"
+                    )} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h4 className="text-lg font-bold text-slate-900">Appearance</h4>
+            <div className="grid grid-cols-3 gap-4">
+              {['light', 'dark', 'system'].map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setPreferences({ ...preferences, theme: mode as any })}
+                  className={cn(
+                    "p-4 rounded-2xl border-2 transition-all text-sm font-bold capitalize",
+                    preferences.theme === mode 
+                      ? "border-brand-600 bg-brand-50 text-brand-700" 
+                      : "border-slate-100 text-slate-500 hover:border-slate-200"
+                  )}
+                >
+                  {mode}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4 pt-4">
+            <button
+              onClick={() => setIsPreferencesOpen(false)}
+              className="flex-1 px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={savePreferences}
+              className="flex-1 bg-brand-600 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-brand-500/20 hover:bg-brand-700 transition-all"
+            >
+              Save Changes
             </button>
           </div>
         </div>

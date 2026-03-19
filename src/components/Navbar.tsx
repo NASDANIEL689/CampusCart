@@ -15,6 +15,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
+import { NotificationCenter } from './NotificationCenter';
 
 export const Navbar = ({ activeTab, setActiveTab, onMessageClick }: { activeTab: string, setActiveTab: (tab: string) => void, onMessageClick?: () => void }) => {
   const { profile, signIn, logout } = useAuth();
@@ -84,13 +85,14 @@ export const Navbar = ({ activeTab, setActiveTab, onMessageClick }: { activeTab:
           <div className="hidden md:flex items-center gap-4">
             {profile ? (
               <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
+                <NotificationCenter />
+                
                 <button 
                   onClick={onMessageClick}
                   className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all relative"
                   title="My Messages"
                 >
                   <MessageSquare size={20} />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-white" />
                 </button>
                 
                 <button 

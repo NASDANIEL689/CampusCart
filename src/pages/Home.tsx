@@ -25,6 +25,41 @@ export const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [loadingVendors, setLoadingVendors] = useState(true);
 
+  const [stats, setStats] = useState({
+    users: '0',
+    listings: '0',
+    vendors: '0',
+    avgRating: '0'
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [usersSnap, listingsSnap, vendorsSnap] = await Promise.all([
+          getDocs(collection(db, 'users')),
+          getDocs(query(collection(db, 'listings'), where('status', '==', 'available'))),
+          getDocs(query(collection(db, 'vendors'), where('status', '==', 'approved')))
+        ]);
+
+        const vendors = vendorsSnap.docs.map(doc => doc.data() as Vendor);
+        const avgRating = vendors.length > 0 
+          ? (vendors.reduce((acc, v) => acc + (v.rating || 0), 0) / vendors.length).toFixed(1)
+          : '0';
+
+        setStats({
+          users: usersSnap.size > 1000 ? `${(usersSnap.size / 1000).toFixed(1)}k+` : `${usersSnap.size}+`,
+          listings: listingsSnap.size.toString(),
+          vendors: vendorsSnap.size.toString(),
+          avgRating: `${avgRating}/5`
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
   useEffect(() => {
     const fetchPopularProducts = async () => {
       try {
@@ -118,8 +153,8 @@ export const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
             transition={{ delay: 0.2 }}
             className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed"
           >
-            The all-in-one platform for students to trade, order food, and connect. 
-            Join thousands of students making campus life smarter.
+            Your campus, supercharged. From marketplace steals to lunchtime deals, 
+            join students already redefining the university experience.
           </motion.p>
 
           <motion.div 
@@ -347,10 +382,10 @@ export const Home = ({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
           
           <div className="grid grid-cols-2 gap-6">
             {[
-              { label: 'Student Rating', value: '4.9/5', icon: <Star className="fill-brand-500 text-brand-500" size={20} /> },
-              { label: 'Time Saved', value: '2hrs/day', icon: <Clock className="text-brand-500" size={20} /> },
-              { label: 'Active Users', value: '50k+', icon: <UserIcon className="text-brand-500" size={20} /> },
-              { label: 'Transactions', value: 'Instant', icon: <Zap className="text-brand-500" size={20} /> }
+              { label: 'Student Rating', value: stats.avgRating, icon: <Star className="fill-brand-500 text-brand-500" size={20} /> },
+              { label: 'Active Vendors', value: stats.vendors, icon: <Store className="text-brand-500" size={20} /> },
+              { label: 'Active Users', value: stats.users, icon: <UserIcon className="text-brand-500" size={20} /> },
+              { label: 'Live Listings', value: stats.listings, icon: <ShoppingBag className="text-brand-500" size={20} /> }
             ].map((item, i) => (
               <motion.div 
                 key={i}

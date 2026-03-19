@@ -26,6 +26,9 @@ service cloud.firestore {
     // Collection: reviews
     // Fields: id, targetId, authorId, rating, comment, createdAt
     //
+    // Collection: notifications
+    // Fields: id, userId, title, message, type, link, read, createdAt
+    //
     // ===============================================================
 
     // Helper Functions
@@ -59,13 +62,15 @@ service cloud.firestore {
       return data.keys().hasAll(['ownerId', 'name', 'status']) &&
              data.ownerId is string && data.name is string &&
              data.status in ['pending', 'approved', 'suspended'] &&
+             (!('isOpen' in data) || data.isOpen is bool) &&
              (!('rating' in data) || data.rating is number) &&
              (!('ratingCount' in data) || data.ratingCount is number);
     }
 
     function isValidMenuItem(data) {
-      return data.keys().hasAll(['vendorId', 'name', 'price']) &&
-             data.vendorId is string && data.name is string && data.price is number;
+      return data.keys().hasAll(['vendorId', 'name', 'price', 'isAvailable']) &&
+             data.vendorId is string && data.name is string && data.price is number &&
+             data.isAvailable is bool;
     }
 
     function isValidOrder(data) {
@@ -85,6 +90,13 @@ service cloud.firestore {
              (!('coordinates' in data) || data.coordinates == null || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number));
     }
 
+    function isValidNotification(data) {
+      return data.keys().hasAll(['userId', 'title', 'message', 'type', 'read', 'createdAt']) &&
+             data.userId is string && data.title is string && data.message is string &&
+             data.type in ['message', 'order', 'system'] &&
+             data.read is bool;
+    }
+
     // Rules
     match /users/{userId} {
       allow read: if isAuthenticated();
@@ -95,7 +107,7 @@ service cloud.firestore {
 
     match /vendors/{vendorId} {
       allow read: if true;
-      allow create: if isAuthenticated() && isValidVendor(request.resource.data);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid && isValidVendor(request.resource.data);
       allow update: if (isOwner(resource.data.ownerId) || isAdmin()) && isValidVendor(request.resource.data) ||
                      (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingCount']));
     }
@@ -134,6 +146,14 @@ service cloud.firestore {
         allow create: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants &&
           request.resource.data.senderId == request.auth.uid;
       }
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.userId);
+      allow create: if isAuthenticated() && isValidNotification(request.resource.data);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId) && 
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
   }
 }

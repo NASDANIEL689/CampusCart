@@ -12,6 +12,27 @@ export interface UserProfile {
   grade?: string;
   rating?: number;
   ratingCount?: number;
+  preferences?: UserPreferences;
+  createdAt: Timestamp;
+}
+
+export interface UserPreferences {
+  notifications: {
+    messages: boolean;
+    orders: boolean;
+    promotions: boolean;
+  };
+  theme: 'light' | 'dark' | 'system';
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: 'message' | 'order' | 'system';
+  link?: string;
+  read: boolean;
   createdAt: Timestamp;
 }
 
@@ -22,11 +43,13 @@ export interface Vendor {
   description: string;
   logo: string;
   location: string;
+  coordinates?: { lat: number; lng: number };
   operatingHours: string;
   phone?: string;
   email?: string;
   rating?: number;
   ratingCount?: number;
+  isOpen: boolean;
   status: 'pending' | 'approved' | 'suspended';
   createdAt: Timestamp;
 }
@@ -49,6 +72,8 @@ export interface Order {
   vendorId?: string;
   sellerId?: string;
   listingId?: string;
+  vendorLocation?: string;
+  vendorCoordinates?: { lat: number; lng: number };
   type: 'food' | 'marketplace';
   items: { name: string; price: number; quantity: number }[];
   totalPrice: number;
@@ -82,6 +107,8 @@ export interface Chat {
   lastMessageAt?: Timestamp;
   listingId?: string;
   listingTitle?: string;
+  agreed?: boolean;
+  agreedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt?: Timestamp;
   unreadCount?: number;

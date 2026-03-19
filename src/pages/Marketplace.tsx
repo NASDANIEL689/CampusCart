@@ -23,6 +23,7 @@ import { cn } from '../utils/cn';
 import { CreateListingModal } from '../components/CreateListingModal';
 import { ChatModal } from '../components/ChatModal';
 import { MarketplaceMap } from '../components/MarketplaceMap';
+import { createNotification } from '../utils/notifications';
 
 export const Marketplace = () => {
   const [listings, setListings] = useState<Listing[]>([]);
@@ -161,6 +162,17 @@ export const Marketplace = () => {
         status: 'pending',
         createdAt: Timestamp.now()
       });
+      
+      // Send notification to seller
+      if (listing.sellerId) {
+        await createNotification(
+          listing.sellerId,
+          'New Interest in Item!',
+          `${user.displayName} is interested in buying ${listing.title}.`,
+          'order',
+          '#'
+        );
+      }
       
       alert(`Interest sent! You've requested to buy ${listing.title}. The seller has been notified. Check your profile for order details.`);
       setSelectedListing(null);

@@ -28,11 +28,28 @@
         "location": { "type": "string" },
         "operatingHours": { "type": "string" },
         "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "isOpen": { "type": "boolean", "description": "Whether the vendor is currently open for business." },
         "rating": { "type": "number", "description": "Average rating of the vendor." },
         "ratingCount": { "type": "integer", "description": "Total number of ratings received." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["ownerId", "name", "status"]
+    },
+    "MenuItem": {
+      "title": "Menu Item",
+      "description": "A food item sold by a vendor.",
+      "type": "object",
+      "properties": {
+        "vendorId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "photo": { "type": "string" },
+        "category": { "type": "string", "enum": ["Main Course", "Snacks", "Drinks", "Desserts"] },
+        "isAvailable": { "type": "boolean", "description": "Whether the item is currently available for purchase." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vendorId", "name", "price", "isAvailable"]
     },
     "Listing": {
       "title": "Marketplace Listing",
@@ -96,14 +113,31 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["chatId", "senderId", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string", "enum": ["message", "order", "system"] },
+        "link": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "message", "type", "read", "createdAt"]
     }
   },
   "firestore": {
     "/users/{userId}": { "schema": "User", "description": "User profiles" },
     "/vendors/{vendorId}": { "schema": "Vendor", "description": "Food vendors" },
+    "/vendors/{vendorId}/menuItems/{itemId}": { "schema": "MenuItem", "description": "Vendor menu items" },
     "/listings/{listingId}": { "schema": "Listing", "description": "Marketplace listings" },
     "/orders/{orderId}": { "schema": "Order", "description": "Orders and sales" },
     "/chats/{chatId}": { "schema": "Chat", "description": "Chat sessions" },
-    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat messages" }
+    "/chats/{chatId}/messages/{messageId}": { "schema": "Message", "description": "Chat messages" },
+    "/notifications/{notificationId}": { "schema": "Notification", "description": "User notifications" }
   }
 }

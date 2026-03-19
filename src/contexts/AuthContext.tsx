@@ -24,6 +24,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   signIn: () => Promise<void>;
+  switchAccount: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -59,6 +60,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             displayName: user.displayName || '',
             photoURL: user.photoURL || '',
             role: role,
+            preferences: {
+              notifications: {
+                messages: true,
+                orders: true,
+                promotions: false,
+              },
+              theme: 'system',
+            },
             createdAt: Timestamp.now(),
           };
           await setDoc(docRef, newProfile);
@@ -94,6 +103,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const switchAccount = async () => {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
+    try {
+      await signOut(auth);
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Switch account error", error);
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -103,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, switchAccount, logout }}>
       {children}
     </AuthContext.Provider>
   );

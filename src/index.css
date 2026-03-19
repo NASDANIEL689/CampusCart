@@ -41,6 +41,14 @@
   .btn-primary {
     @apply bg-brand-600 text-white px-6 py-3 rounded-2xl font-semibold hover:bg-brand-700 transition-all active:scale-95 disabled:opacity-50;
   }
+
+  .markdown-body a {
+    @apply text-brand-600 underline hover:text-brand-700 break-all;
+  }
+  
+  .markdown-body p {
+    @apply mb-0;
+  }
 }
 
 /* Custom scrollbar */

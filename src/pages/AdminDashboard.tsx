@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Vendor, OperationType } from '../types';
 import { handleFirestoreError } from '../utils/error';
+import { createNotification } from '../utils/notifications';
 
 export const AdminDashboard = () => {
   const [pendingVendors, setPendingVendors] = useState<Vendor[]>([]);
@@ -27,6 +28,16 @@ export const AdminDashboard = () => {
       if (status === 'approved') {
         await updateDoc(doc(db, 'users', ownerId), { role: 'vendor' });
       }
+      
+      await createNotification(
+        ownerId,
+        status === 'approved' ? 'Vendor Application Approved!' : 'Vendor Application Rejected',
+        status === 'approved' 
+          ? 'Congratulations! Your vendor application has been approved. You can now start selling.' 
+          : 'We regret to inform you that your vendor application was not approved at this time.',
+        'system',
+        '#'
+      );
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, 'vendors');
     }
