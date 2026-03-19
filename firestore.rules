@@ -77,17 +77,20 @@ service cloud.firestore {
 
     function isValidListing(data) {
       return data.keys().hasAll(['sellerId', 'title', 'price', 'status']) &&
-             data.sellerId is string && data.title is string && data.price is number &&
+             data.sellerId is string &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 100 &&
+             data.price is number && data.price >= 0 &&
              data.status in ['available', 'sold'] &&
-             (!('location' in data) || data.location is string) &&
-             (!('coordinates' in data) || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number));
+             (!('location' in data) || data.location is string || data.location == null) &&
+             (!('coordinates' in data) || data.coordinates == null || (data.coordinates is map && data.coordinates.lat is number && data.coordinates.lng is number));
     }
 
     // Rules
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data);
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) ||
+                     (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'ratingCount']));
     }
 
     match /vendors/{vendorId} {
@@ -110,7 +113,7 @@ service cloud.firestore {
 
     match /listings/{listingId} {
       allow read: if true;
-      allow create: if isAuthenticated() && isValidListing(request.resource.data);
+      allow create: if isAuthenticated() && request.resource.data.sellerId == request.auth.uid && isValidListing(request.resource.data);
       allow update: if (isOwner(resource.data.sellerId) || isAdmin()) && isValidListing(request.resource.data);
       allow delete: if (isOwner(resource.data.sellerId) || isAdmin());
     }

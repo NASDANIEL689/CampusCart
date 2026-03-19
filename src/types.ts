@@ -10,6 +10,8 @@ export interface UserProfile {
   role: UserRole;
   schoolId?: string;
   grade?: string;
+  rating?: number;
+  ratingCount?: number;
   createdAt: Timestamp;
 }
 

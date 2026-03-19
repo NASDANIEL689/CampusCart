@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Utensils, Store, LayoutDashboard, ShieldCheck, MessageSquare, User as UserIcon, LogOut, Menu, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ShoppingBag, 
+  Utensils, 
+  Store, 
+  LayoutDashboard, 
+  ShieldCheck, 
+  MessageSquare, 
+  User as UserIcon, 
+  LogOut, 
+  Menu, 
+  X,
+  Home as HomeIcon
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../utils/cn';
 
@@ -9,9 +21,9 @@ export const Navbar = ({ activeTab, setActiveTab, onMessageClick }: { activeTab:
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const tabs = [
-    { id: 'home', label: 'Home', icon: ShoppingBag },
-    { id: 'food', label: 'Food', icon: Utensils },
+    { id: 'home', label: 'Home', icon: HomeIcon },
     { id: 'marketplace', label: 'Marketplace', icon: Store },
+    { id: 'food', label: 'Food', icon: Utensils },
   ];
 
   if (profile?.role === 'vendor') {
@@ -22,67 +34,109 @@ export const Navbar = ({ activeTab, setActiveTab, onMessageClick }: { activeTab:
   }
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white">
-              <ShoppingBag size={24} />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900">CampusCart</span>
-          </div>
+    <nav className="sticky top-0 z-50 w-full px-4 sm:px-6 lg:px-8 pt-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="glass rounded-3xl px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <button 
+              onClick={() => setActiveTab('home')}
+              className="flex items-center gap-2 group"
+            >
+              <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20 group-hover:scale-110 transition-transform">
+                <ShoppingBag size={20} />
+              </div>
+              <span className="text-xl font-display font-bold tracking-tight text-slate-900">
+                Campus<span className="text-brand-600">Cart</span>
+              </span>
+            </button>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-8">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 text-sm font-medium transition-colors",
-                  activeTab === tab.id ? "text-emerald-600" : "text-gray-500 hover:text-gray-900"
-                )}
-              >
-                <tab.icon size={18} />
-                {tab.label}
-              </button>
-            ))}
+            {/* Desktop Nav */}
+            <div className="hidden md:flex items-center gap-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={cn(
+                      "relative flex items-center gap-2.5 px-4 py-2 rounded-xl transition-all duration-300 text-sm font-medium",
+                      isActive 
+                        ? "text-brand-600" 
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                    )}
+                  >
+                    <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                    <span>{tab.label}</span>
+                    {isActive && (
+                      <motion.div
+                        layoutId="nav-indicator"
+                        className="absolute -bottom-1 left-4 right-4 h-0.5 bg-brand-500 rounded-full"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
             {profile ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 pl-4 border-l border-slate-100">
                 <button 
                   onClick={onMessageClick}
-                  className="p-2 text-gray-500 hover:text-emerald-600 transition-colors relative"
+                  className="p-2.5 text-slate-500 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all relative"
                   title="My Messages"
                 >
-                  <MessageSquare size={22} />
+                  <MessageSquare size={20} />
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-brand-500 rounded-full border-2 border-white" />
                 </button>
+                
                 <button 
                   onClick={() => setActiveTab('profile')}
-                  className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-gray-100 transition-colors"
+                  className={cn(
+                    "flex items-center gap-3 p-1.5 pr-4 rounded-2xl transition-all",
+                    activeTab === 'profile' ? "bg-brand-50 text-brand-700" : "hover:bg-slate-50 text-slate-700"
+                  )}
                 >
-                  <img src={profile.photoURL} alt="" className="w-8 h-8 rounded-full border border-gray-200" referrerPolicy="no-referrer" />
-                  <span className="text-sm font-medium text-gray-700">{profile.displayName.split(' ')[0]}</span>
+                  <div className="w-8 h-8 rounded-xl bg-slate-200 overflow-hidden border border-white shadow-sm">
+                    {profile.photoURL ? (
+                      <img src={profile.photoURL} alt="" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-brand-100 text-brand-700 font-bold">
+                        {profile.displayName?.[0].toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold">{profile.displayName.split(' ')[0]}</span>
                 </button>
-                <button onClick={logout} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+
+                <button 
+                  onClick={logout} 
+                  className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                  title="Sign Out"
+                >
                   <LogOut size={20} />
                 </button>
               </div>
             ) : (
               <button 
                 onClick={signIn}
-                className="bg-emerald-600 text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-emerald-700 transition-colors"
+                className="btn-primary flex items-center gap-2 py-2.5"
               >
-                Sign In
+                <UserIcon size={18} />
+                <span>Sign In</span>
               </button>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden">
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 text-gray-500">
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)} 
+              className="p-2 text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+            >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -93,59 +147,58 @@ export const Navbar = ({ activeTab, setActiveTab, onMessageClick }: { activeTab:
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white border-b border-gray-100 overflow-hidden"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="md:hidden absolute top-24 left-4 right-4 glass rounded-3xl p-6 shadow-2xl overflow-hidden"
           >
-            <div className="px-4 pt-2 pb-6 space-y-2">
+            <div className="flex flex-col gap-2">
               {tabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => { setActiveTab(tab.id); setIsMenuOpen(false); }}
                   className={cn(
-                    "flex items-center gap-3 w-full p-3 rounded-xl text-base font-medium transition-colors",
-                    activeTab === tab.id ? "bg-emerald-50 text-emerald-600" : "text-gray-600 hover:bg-gray-50"
+                    "flex items-center gap-3 w-full p-4 rounded-2xl text-lg font-medium transition-colors",
+                    activeTab === tab.id ? "bg-brand-50 text-brand-600" : "text-slate-600 hover:bg-slate-50"
                   )}
                 >
-                  <tab.icon size={20} />
+                  <tab.icon size={24} />
                   {tab.label}
                 </button>
               ))}
-              <div className="pt-4 border-t border-gray-100">
-                {profile ? (
-                  <div className="space-y-2">
-                    <button 
-                      onClick={() => { onMessageClick?.(); setIsMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full p-3 rounded-xl text-gray-600 hover:bg-gray-50"
-                    >
-                      <MessageSquare size={20} />
-                      Messages
-                    </button>
-                    <button 
-                      onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
-                      className="flex items-center gap-3 w-full p-3 rounded-xl text-gray-600 hover:bg-gray-50"
-                    >
-                      <UserIcon size={20} />
-                      Profile
-                    </button>
-                    <button 
-                      onClick={logout}
-                      className="flex items-center gap-3 w-full p-3 rounded-xl text-red-600 hover:bg-red-50"
-                    >
-                      <LogOut size={20} />
-                      Logout
-                    </button>
-                  </div>
-                ) : (
+              <div className="h-px bg-slate-100 my-4" />
+              {profile ? (
+                <div className="space-y-2">
                   <button 
-                    onClick={signIn}
-                    className="w-full bg-emerald-600 text-white p-3 rounded-xl font-medium"
+                    onClick={() => { onMessageClick?.(); setIsMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full p-4 rounded-2xl text-slate-600 hover:bg-slate-50"
                   >
-                    Sign In
+                    <MessageSquare size={24} />
+                    <span className="text-lg font-medium">Messages</span>
                   </button>
-                )}
-              </div>
+                  <button 
+                    onClick={() => { setActiveTab('profile'); setIsMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full p-4 rounded-2xl text-slate-600 hover:bg-slate-50"
+                  >
+                    <UserIcon size={24} />
+                    <span className="text-lg font-medium">Profile</span>
+                  </button>
+                  <button 
+                    onClick={() => { logout(); setIsMenuOpen(false); }}
+                    className="flex items-center gap-3 w-full p-4 rounded-2xl text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut size={24} />
+                    <span className="text-lg font-medium">Logout</span>
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={() => { signIn(); setIsMenuOpen(false); }}
+                  className="btn-primary w-full py-4 text-lg"
+                >
+                  Sign In with Google
+                </button>
+              )}
             </div>
           </motion.div>
         )}

@@ -10,6 +10,8 @@
         "email": { "type": "string", "format": "email" },
         "role": { "type": "string", "enum": ["student", "vendor", "admin"] },
         "photoURL": { "type": "string" },
+        "rating": { "type": "number", "description": "Average rating of the seller." },
+        "ratingCount": { "type": "integer", "description": "Total number of ratings received." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["uid", "displayName", "email", "role"]
